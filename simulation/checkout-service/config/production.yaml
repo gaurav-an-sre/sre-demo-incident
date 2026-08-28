@@ -1,0 +1,12 @@
+replicas: 8
+resources:
+  memory: 512Mi
+  cpu: 500m
+connection_pool:
+  max_size: 50
+  pre_warm: true
+  acquire_timeout_ms: 5000
+payment_gateway:
+  host: payment-gateway.internal
+  port: 8443
+  timeout_ms: 3000

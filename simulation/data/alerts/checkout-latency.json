@@ -1,0 +1,23 @@
+{
+  "incident_id": "INC-2026-0847",
+  "title": "Checkout service degradation — elevated latency and 5xx errors",
+  "severity": "P1",
+  "status": "firing",
+  "service": "checkout-service",
+  "team": "payments-platform",
+  "fired_at": "2026-08-28T02:04:17Z",
+  "alert_name": "CheckoutServiceHighLatency",
+  "description": "P99 checkout latency exceeded 5s threshold for 10+ minutes. Error rate spiked to 23%.",
+  "runbook_url": "simulation/runbooks/checkout-service.md",
+  "dashboard_url": "https://grafana.internal/d/checkout-overview",
+  "on_call": "payments-primary",
+  "labels": {
+    "env": "production",
+    "region": "us-east-1",
+    "service": "checkout-service"
+  },
+  "annotations": {
+    "summary": "Customers cannot complete purchases. Revenue impact estimated at $12k/min.",
+    "runbook": "Check recent deploys, inspect connection pool metrics, verify payment-gateway health."
+  }
+}

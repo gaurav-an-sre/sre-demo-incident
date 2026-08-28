@@ -1,0 +1,7 @@
+{
+  "name": "checkout-service",
+  "version": "2.14.3",
+  "description": "Simulated checkout service with connection pool leak (v2.14.3)",
+  "type": "module",
+  "main": "src/handler.ts"
+}

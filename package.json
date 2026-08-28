@@ -1,0 +1,27 @@
+{
+  "name": "sre-demo-incident",
+  "version": "1.0.0",
+  "description": "SRE incident response demo: Alert → Triage → Investigation → Postmortem using Cursor SDK",
+  "type": "module",
+  "packageManager": "pnpm@10.9.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "demo": "tsx src/index.ts",
+    "demo:dry-run": "tsx src/index.ts --dry-run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@cursor/sdk": "^1.0.7",
+    "chalk": "^5.4.1",
+    "dotenv": "^16.4.7",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

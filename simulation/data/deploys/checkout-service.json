@@ -1,0 +1,36 @@
+{
+  "service": "checkout-service",
+  "deploys": [
+    {
+      "version": "v2.14.2",
+      "deployed_at": "2026-08-27T18:22:00Z",
+      "deployed_by": "ci-bot",
+      "status": "stable",
+      "commit": "a3f8c21",
+      "summary": "Fix tax calculation rounding for EU orders",
+      "files_changed": ["src/tax/calculator.ts", "tests/tax.test.ts"]
+    },
+    {
+      "version": "v2.14.3",
+      "deployed_at": "2026-08-28T01:15:43Z",
+      "deployed_by": "jchen",
+      "status": "degraded",
+      "commit": "b7e2d94",
+      "summary": "Optimize payment-gateway connection pooling for Black Friday prep",
+      "files_changed": [
+        "src/pool.ts",
+        "src/checkout/handler.ts",
+        "config/production.yaml"
+      ],
+      "diff_summary": "Changed pool max from 50 to 50 but removed connection release on error path in pool.ts:releaseConnection(). Added aggressive connection pre-warming."
+    },
+    {
+      "version": "v2.14.4",
+      "deployed_at": null,
+      "deployed_by": null,
+      "status": "pending",
+      "commit": null,
+      "summary": "Hotfix for connection pool leak (not yet deployed)"
+    }
+  ]
+}

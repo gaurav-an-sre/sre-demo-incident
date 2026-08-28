@@ -1,0 +1,31 @@
+{
+  "service": "checkout-service",
+  "window": {
+    "start": "2026-08-28T01:30:00Z",
+    "end": "2026-08-28T02:30:00Z"
+  },
+  "metrics": [
+    { "timestamp": "2026-08-28T01:30:00Z", "p50_ms": 180, "p99_ms": 420, "error_rate_pct": 0.2, "rps": 340, "pool_available": 50, "pool_in_use": 12 },
+    { "timestamp": "2026-08-28T01:35:00Z", "p50_ms": 195, "p99_ms": 480, "error_rate_pct": 0.3, "rps": 355, "pool_available": 48, "pool_in_use": 18 },
+    { "timestamp": "2026-08-28T01:40:00Z", "p50_ms": 220, "p99_ms": 650, "error_rate_pct": 0.5, "rps": 360, "pool_available": 42, "pool_in_use": 28 },
+    { "timestamp": "2026-08-28T01:45:00Z", "p50_ms": 310, "p99_ms": 1200, "error_rate_pct": 1.2, "rps": 358, "pool_available": 30, "pool_in_use": 42 },
+    { "timestamp": "2026-08-28T01:50:00Z", "p50_ms": 580, "p99_ms": 2800, "error_rate_pct": 4.8, "rps": 340, "pool_available": 12, "pool_in_use": 48 },
+    { "timestamp": "2026-08-28T01:55:00Z", "p50_ms": 1200, "p99_ms": 5200, "error_rate_pct": 12.4, "rps": 290, "pool_available": 2, "pool_in_use": 50 },
+    { "timestamp": "2026-08-28T02:00:00Z", "p50_ms": 2100, "p99_ms": 7800, "error_rate_pct": 18.7, "rps": 210, "pool_available": 0, "pool_in_use": 50 },
+    { "timestamp": "2026-08-28T02:04:00Z", "p50_ms": 2800, "p99_ms": 9200, "error_rate_pct": 23.1, "rps": 175, "pool_available": 0, "pool_in_use": 50 },
+    { "timestamp": "2026-08-28T02:10:00Z", "p50_ms": 3200, "p99_ms": 11000, "error_rate_pct": 25.8, "rps": 140, "pool_available": 0, "pool_in_use": 50 },
+    { "timestamp": "2026-08-28T02:20:00Z", "p50_ms": 3500, "p99_ms": 12500, "error_rate_pct": 27.2, "rps": 110, "pool_available": 0, "pool_in_use": 50 }
+  ],
+  "anomalies": [
+    {
+      "type": "correlation",
+      "description": "Connection pool exhaustion correlates with latency spike starting ~01:45 UTC",
+      "confidence": 0.94
+    },
+    {
+      "type": "deploy_correlation",
+      "description": "Deploy v2.14.3 at 01:15 UTC preceded metric degradation by ~30 minutes",
+      "confidence": 0.87
+    }
+  ]
+}
