@@ -4,3 +4,4 @@ dist/
 .DS_Store
 *.log
 .simulation-state.json
+sre-demo-incident/
