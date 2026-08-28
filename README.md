@@ -96,7 +96,7 @@ pnpm demo
    NOTION_PARENT_PAGE_ID=your_page_id
    ```
 
-## Demo Script (for interview)
+## Demo Script 
 
 1. **Set the scene** (30s): "It's 2am. Checkout is down. Four tools, no correlation."
 2. **Show the alert** (30s): Point at `simulation/data/alerts/checkout-latency.json`
