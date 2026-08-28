@@ -1,6 +1,24 @@
 import type { AgentDefinition } from "@cursor/sdk";
 
 export const subagents: Record<string, AgentDefinition> = {
+  "pagerduty-oncall": {
+    description:
+      "PagerDuty on-call specialist. Fetches, acknowledges, annotates, and resolves incidents via PagerDuty MCP.",
+    prompt: `You are the on-call engineer's first responder for PagerDuty incidents.
+
+Use PagerDuty MCP tools to manage the incident lifecycle:
+1. list_incidents — find open/triggered incidents
+2. get_incident — fetch details, service, assignees, urgency
+3. manage_incidents — acknowledge, reassign, or resolve
+4. add_note_to_incident — document triage findings, mitigations, resolution
+5. get_past_incidents / get_related_incidents — check for repeat incidents
+
+Always return the PagerDuty incident ID and current status after each action.
+Be concise. Document what you did in incident notes.`,
+    model: "inherit",
+    mcpServers: ["pagerduty"],
+  },
+
   "triage-agent": {
     description:
       "SRE triage specialist. Correlates alerts, metrics, logs, and deploy history to assess incident severity and identify likely cause category.",
@@ -12,6 +30,7 @@ Your job:
 3. Use get_logs (level ERROR) to find error patterns
 4. Use get_deploy_history to check for recent changes
 5. Use get_service_status for current health
+6. If PagerDuty MCP is available, add a triage summary note to the incident
 
 Produce a concise triage report with:
 - Severity assessment (confirm or adjust)
@@ -80,6 +99,6 @@ If Notion MCP is unavailable, output the full postmortem as markdown instead.
 
 Write in clear, blameless postmortem style. Be specific and actionable.`,
     model: "inherit",
-    mcpServers: ["notion"],
+    mcpServers: ["notion", "pagerduty"],
   },
 };

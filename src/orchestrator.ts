@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Agent, type McpServerConfig, type SDKAgent, type SDKMessage } from "@cursor/sdk";
+import { Agent, type SDKAgent, type SDKMessage } from "@cursor/sdk";
 import { subagents } from "./agents/definitions.js";
+import { buildMcpServers } from "./mcp/servers.js";
 import { createIncidentTools, resetSimulationState } from "./tools/incident-tools.js";
 import * as log from "./logger.js";
 
@@ -11,30 +12,15 @@ export interface OrchestratorOptions {
   dryRun: boolean;
   notionToken?: string;
   notionParentPageId?: string;
+  pagerDutyApiKey?: string;
+  pagerDutyApiHost?: string;
+  pagerDutyServiceName?: string;
+  pagerDutyIncidentId?: string;
 }
 
 interface PhaseResult {
   phase: string;
   output: string;
-}
-
-function buildMcpServers(notionToken?: string): Record<string, McpServerConfig> | undefined {
-  if (!notionToken) return undefined;
-
-  return {
-    notion: {
-      type: "stdio",
-      command: "npx",
-      args: ["-y", "@notionhq/notion-mcp-server"],
-      env: {
-        NOTION_TOKEN: notionToken,
-        OPENAPI_MCP_HEADERS: JSON.stringify({
-          Authorization: `Bearer ${notionToken}`,
-          "Notion-Version": "2022-06-28",
-        }),
-      },
-    },
-  };
 }
 
 async function streamRun(
@@ -100,7 +86,15 @@ async function runDryRun(): Promise<void> {
   log.info(alert.description);
   log.info(`Impact: ${alert.annotations.summary}`);
 
-  await log.sleep(1500);
+  await log.sleep(1000);
+
+  log.phase("alert", "PagerDuty — fetching open incidents...");
+  log.toolCall("pagerduty:list_incidents", "completed");
+  log.toolCall("pagerduty:get_incident", "completed");
+  log.toolCall("pagerduty:manage_incidents", "completed");
+  log.success("Acknowledged PagerDuty incident #INC-2026-0847");
+
+  await log.sleep(1000);
 
   log.phase("triage", "Correlating signals across 4 tools...");
   log.toolCall("get_alert", "completed");
@@ -132,11 +126,14 @@ Fix needed: Code fix in pool.ts + restart for immediate recovery`);
 
   log.phase("remediate", "Executing mitigation...");
   log.toolCall("restart_service", "completed");
+  log.toolCall("pagerduty:add_note_to_incident", "completed");
   log.success("Service restarted — error rate dropping to 0.4%");
 
   await log.sleep(1000);
 
   log.phase("postmortem", "Writing postmortem...");
+  log.toolCall("pagerduty:manage_incidents", "completed");
+  log.success("PagerDuty incident resolved");
   log.warn("Notion MCP not configured — outputting markdown postmortem");
   log.assistantText(`
 # Postmortem: INC-2026-0847 Checkout Service Degradation
@@ -162,10 +159,24 @@ export async function runIncidentPipeline(opts: OrchestratorOptions): Promise<vo
   }
 
   const alert = loadAlert();
-  const mcpServers = buildMcpServers(opts.notionToken);
+  const mcpServers = buildMcpServers({
+    notionToken: opts.notionToken,
+    pagerDutyApiKey: opts.pagerDutyApiKey,
+    pagerDutyApiHost: opts.pagerDutyApiHost,
+  });
   const results: PhaseResult[] = [];
+  const serviceName = opts.pagerDutyServiceName ?? alert.service;
+  const incidentHint = opts.pagerDutyIncidentId
+    ? `Use PagerDuty incident ID: ${opts.pagerDutyIncidentId}`
+    : `Look for open incidents related to service "${serviceName}" or title containing "checkout" / "latency"`;
 
   log.banner("SRE Incident Response — Cursor SDK Agent Pipeline");
+  if (opts.pagerDutyApiKey) {
+    log.success("PagerDuty MCP enabled");
+  }
+  if (opts.notionToken) {
+    log.success("Notion MCP enabled");
+  }
   log.phase("alert", `🚨 ${alert.alert_name} — ${alert.severity}`);
   log.info(`Incident: ${alert.incident_id}`);
   log.info(`Service: ${alert.service} | Fired: ${alert.fired_at}`);
@@ -185,6 +196,34 @@ export async function runIncidentPipeline(opts: OrchestratorOptions): Promise<vo
     mcpServers,
   });
 
+  // Phase 0: PagerDuty alert intake
+  let pagerDutyOutput = "";
+  if (opts.pagerDutyApiKey) {
+    log.banner("Phase 0: PagerDuty — Acknowledge on-call incident");
+    pagerDutyOutput = await streamRun(
+      agent,
+      `A PagerDuty alert just woke up on-call. Handle initial incident intake.
+
+Simulated alert context:
+${JSON.stringify(alert, null, 2)}
+
+${incidentHint}
+
+Use the pagerduty-oncall subagent and PagerDuty MCP tools to:
+1. list_incidents for open/triggered incidents (statuses: triggered, acknowledged)
+2. get_incident for the matching checkout/latency incident
+3. manage_incidents to acknowledge the incident (status: acknowledged)
+4. add_note_to_incident with: "SDK agent engaged — starting automated triage"
+
+Return: PagerDuty incident ID, title, status, service, and assigned escalation policy.`,
+      "alert",
+    );
+    results.push({ phase: "pagerduty", output: pagerDutyOutput });
+    console.log();
+    log.assistantText(pagerDutyOutput.slice(0, 1500));
+    await log.sleep(1500);
+  }
+
   // Phase 1: Triage
   log.banner("Phase 1: Triage — Correlating observability signals");
   const triageOutput = await streamRun(
@@ -193,9 +232,11 @@ export async function runIncidentPipeline(opts: OrchestratorOptions): Promise<vo
 
 Alert details:
 ${JSON.stringify(alert, null, 2)}
+${pagerDutyOutput ? `\nPagerDuty context:\n${pagerDutyOutput}` : ""}
 
 Use the triage-agent subagent to correlate data from all observability tools.
 Check: metrics, logs, deploy history, and current service status.
+${opts.pagerDutyApiKey ? "Add a PagerDuty note summarizing triage findings via add_note_to_incident." : ""}
 Produce a structured triage report.`,
     "triage",
   );
@@ -234,11 +275,13 @@ Produce a detailed root cause analysis with evidence chain.`,
 
 Root cause analysis:
 ${investigateOutput}
+${pagerDutyOutput ? `\nPagerDuty incident:\n${pagerDutyOutput}` : ""}
 
 1. Read the runbook for checkout-service
 2. Restart the service using restart_service to recover the connection pool
 3. Verify recovery with get_service_status and get_metrics
-4. Summarize what was done and what permanent fix is still needed`,
+${opts.pagerDutyApiKey ? "4. add_note_to_incident with mitigation summary (restart completed, error rate recovering)" : "4."}
+Summarize what was done and what permanent fix is still needed`,
     "remediate",
   );
   results.push({ phase: "remediate", output: remediateOutput });
@@ -254,18 +297,22 @@ ${investigateOutput}
 ${opts.notionParentPageId ? `Create pages under Notion parent page ID: ${opts.notionParentPageId}` : "Search for or create an 'SRE Incidents' parent page in Notion."}
 
 Use the postmortem-writer subagent.
+${opts.pagerDutyApiKey ? "Include the PagerDuty incident URL/ID in the Notion page. Resolve the PagerDuty incident via manage_incidents (status: resolved) and add a final resolution note." : ""}
 
 Full incident context:
 Alert: ${JSON.stringify(alert)}
+${pagerDutyOutput ? `PagerDuty: ${pagerDutyOutput}` : ""}
 Triage: ${triageOutput}
 Root Cause: ${investigateOutput}
 Remediation: ${remediateOutput}`
     : `Write a complete postmortem document as markdown (Notion is not configured).
 
 Use the postmortem-writer subagent style but output markdown directly.
+${opts.pagerDutyApiKey ? "Resolve the PagerDuty incident via manage_incidents (status: resolved) and add a resolution note with root cause + action items." : ""}
 
 Full incident context:
 Alert: ${JSON.stringify(alert)}
+${pagerDutyOutput ? `PagerDuty: ${pagerDutyOutput}` : ""}
 Triage: ${triageOutput}
 Root Cause: ${investigateOutput}
 Remediation: ${remediateOutput}`;
@@ -277,7 +324,12 @@ Remediation: ${remediateOutput}`;
 
   log.banner("Incident Pipeline Complete");
   log.success(`Processed ${results.length} phases`);
-  log.info("Triage → Investigation → Remediation → Postmortem");
+  log.info("PagerDuty → Triage → Investigation → Remediation → Postmortem");
+  if (opts.pagerDutyApiKey) {
+    log.success("PagerDuty incident lifecycle managed via MCP");
+  } else {
+    log.warn("Set PAGERDUTY_USER_API_KEY to integrate with your PagerDuty account");
+  }
   if (opts.notionToken) {
     log.success("Postmortem written to Notion");
   } else {

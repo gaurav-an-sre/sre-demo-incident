@@ -42,7 +42,7 @@ This demo shows how **programmatic Cursor SDK agents** can do that correlation, 
 |---------|---------------|
 | **Custom Tools** | Simulated observability APIs (metrics, logs, deploys, restart) |
 | **Subagents** | Specialized triage, investigation, and postmortem agents |
-| **MCP Integration** | Notion MCP for incident + postmortem page creation |
+| **MCP Integration** | Notion MCP for postmortems; PagerDuty MCP for incident lifecycle |
 | **Streaming** | Real-time event stream during demo for visibility |
 | **Multi-step orchestration** | Sequential phases with context passing between agents |
 
@@ -65,6 +65,7 @@ This demo shows how **programmatic Cursor SDK agents** can do that correlation, 
 - Node.js 22.13+
 - [Cursor API key](https://cursor.com/dashboard/integrations)
 - (Optional) [Notion integration token](https://www.notion.so/my-integrations)
+- (Optional) [PagerDuty API key](https://support.pagerduty.com/docs/api-access-keys) + [uv](https://docs.astral.sh/uv/) for PagerDuty MCP (`uvx`)
 
 ### Setup
 
@@ -95,6 +96,29 @@ pnpm demo
    NOTION_TOKEN=ntn_your_token_here
    NOTION_PARENT_PAGE_ID=your_page_id
    ```
+
+### PagerDuty Integration
+
+PagerDuty is wired via the [official PagerDuty MCP server](https://github.com/PagerDuty/pagerduty-mcp-server).
+
+1. Install `uv` (provides `uvx`): https://docs.astral.sh/uv/getting-started/installation/
+2. Create a PagerDuty **User API Token** (needs read + write for acknowledge/resolve)
+3. Add to `.env`:
+   ```
+   PAGERDUTY_USER_API_KEY=your_token_here
+   # EU accounts only:
+   PAGERDUTY_API_HOST=https://api.eu.pagerduty.com
+   # Optional: target a specific incident
+   PAGERDUTY_INCIDENT_ID=Q0XXXX
+   PAGERDUTY_SERVICE_NAME=checkout-service
+   ```
+
+**What the agent does in PagerDuty:**
+- **Phase 0:** `list_incidents` → `get_incident` → acknowledge
+- **Triage/Remediate:** `add_note_to_incident` with findings
+- **Postmortem:** `manage_incidents` resolve + link incident ID in Notion
+
+For the interview demo, create a test incident in PagerDuty titled "Checkout service high latency" before running `pnpm demo`.
 
 ## Demo Script 
 
