@@ -8,7 +8,7 @@ the first place.*
 
 ## 1. What changes, and why it's worth doing
 
-Today the pipeline has one honest weakness (section 8 of `WALKTHROUGH.md`): **recovery is asserted by
+Today the pipeline has one honest weakness (section 1 of `PRESENTING.md`): **recovery is asserted by
 the same simulation that caused the failure.** `restart_service` flips `.simulation-state.json`, and
 `get_metrics` obligingly starts returning healthy numbers. Nothing independent measures anything.
 
