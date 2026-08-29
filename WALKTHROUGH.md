@@ -1,10 +1,5 @@
 # INC-2026-0847 — a walkthrough
 
-*Read this before the demo. It explains the problem, the design, and exactly what you're about to
-watch happen on screen.*
-
----
-
 ## 1. The problem
 
 It's 2:04 AM. An alert fires: checkout p99 latency has been over the 5-second threshold for ten
@@ -179,9 +174,3 @@ globally.
 | One mutating tool, seven read-only | The blast radius of a wrong decision is exactly one restart | A real deployment needs approval gating on that tool, which this doesn't have yet |
 | Notion via MCP, with markdown fallback | Shows a real document workflow ending in the system of record | Requires setup, so the fallback path is the one that always works |
 | Connection-pool leak as the scenario | Universally recognised, and genuinely subtle: only leaks on the error path | Deliberately a single root cause — real incidents are often two things at once |
-
-
----
-
-That's the system. For the limitations to state before you're asked, the timed run of show, the
-prepared answers, and what you'd build next, see [`PRESENTING.md`](./PRESENTING.md).
