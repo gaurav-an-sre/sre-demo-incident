@@ -4,6 +4,8 @@
 
 A working prototype that demonstrates how Cursor SDK agents automate the full SRE incident lifecycle — from a 2am P1 alert through root cause analysis to a blameless postmortem in Notion.
 
+See **[WALKTHROUGH.md](./WALKTHROUGH.md)** for the interview narrative, architecture rationale, and design trade-offs.
+
 ## The Problem
 
 At 2:04 AM, checkout latency spikes. The on-call engineer stares at four different tools — dashboards, logs, deploy history, runbooks — trying to correlate signals while customers can't check out. After a restart, everyone goes back to bed. Days later, someone writes the postmortem from memory.
