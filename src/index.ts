@@ -20,6 +20,10 @@ const apiKey = process.env.CURSOR_API_KEY?.trim() ?? "";
 const model = process.env.CURSOR_MODEL?.trim() || "composer-2.5";
 const notionToken = process.env.NOTION_TOKEN?.trim();
 const notionParentPageId = process.env.NOTION_PARENT_PAGE_ID?.trim();
+const pagerDutyApiKey = process.env.PAGERDUTY_USER_API_KEY?.trim();
+const pagerDutyApiHost = process.env.PAGERDUTY_API_HOST?.trim();
+const pagerDutyServiceName = process.env.PAGERDUTY_SERVICE_NAME?.trim();
+const pagerDutyIncidentId = process.env.PAGERDUTY_INCIDENT_ID?.trim();
 
 if (!dryRun && !apiKey) {
   console.log("No CURSOR_API_KEY found — running in dry-run mode.");
@@ -43,4 +47,8 @@ await runIncidentPipeline({
   dryRun: dryRun || !apiKey,
   notionToken,
   notionParentPageId,
+  pagerDutyApiKey,
+  pagerDutyApiHost,
+  pagerDutyServiceName,
+  pagerDutyIncidentId,
 });
